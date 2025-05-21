@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api';
-import './TodoList.css'; // 👈 Import CSS file
+import './TodoList.css'; // 👈 Import CSS
 
 const TodoList = () => {
   const [todos, setTodos] = useState([]);
   const [title, setTitle] = useState('');
   const [editingId, setEditingId] = useState(null);
+  const [summary, setSummary] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const fetchTodos = async () => {
     try {
@@ -49,6 +52,20 @@ const TodoList = () => {
     setEditingId(todo.id);
   };
 
+  const generateSummary = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      setSummary('');
+      const res = await api.post('/summarize');
+      setSummary(res.data.summary);
+    } catch (error) {
+      setError(error.response?.data?.error || 'Failed to generate summary');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchTodos();
   }, []);
@@ -66,7 +83,6 @@ const TodoList = () => {
         />
         <button type="submit">{editingId ? 'Update' : 'Add'}</button>
       </form>
-
       <ul className="todo-list">
         {todos.map((todo) => (
           <li key={todo.id} className="todo-item">
@@ -84,6 +100,18 @@ const TodoList = () => {
           </li>
         ))}
       </ul>
+      <div className="summary-section">
+        <button className="summary-btn" onClick={generateSummary} disabled={loading}>
+          {loading ? 'Summarizing...' : 'Generate Summary'}
+        </button>
+        {error && <p className="error">{error}</p>}
+        {summary && (
+          <div className="summary-box">
+            <h3>🧠 Summary</h3>
+            <p>{summary}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
